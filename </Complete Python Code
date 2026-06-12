@@ -1,0 +1,190 @@
+import hashlib
+
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import serialization
+
+
+# -----------------------------
+# SHA-256 Hashing
+# -----------------------------
+def generate_hash():
+    message = input("Enter Message: ")
+
+    hash_value = hashlib.sha256(message.encode()).hexdigest()
+
+    print("\nSHA-256 Hash:")
+    print(hash_value)
+
+
+# -----------------------------
+# Digital Signature
+# -----------------------------
+
+private_key = None
+public_key = None
+
+
+def generate_keys():
+    global private_key, public_key
+
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048
+    )
+
+    public_key = private_key.public_key()
+
+    print("\nRSA Public-Private Key Pair Generated Successfully!")
+
+
+def sign_message():
+    global private_key
+
+    if private_key is None:
+        print("Generate keys first!")
+        return
+
+    message = input("Enter Message to Sign: ")
+
+    signature = private_key.sign(
+        message.encode(),
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+
+    print("\nSignature Generated Successfully!")
+    return message, signature
+
+
+def verify_signature():
+    global public_key
+
+    if public_key is None:
+        print("Generate keys first!")
+        return
+
+    message = input("Enter Original Message: ")
+
+    signature_hex = input(
+        "Paste Signature (hex format): "
+    )
+
+    try:
+        signature = bytes.fromhex(signature_hex)
+
+        public_key.verify(
+            signature,
+            message.encode(),
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
+
+        print("\nSignature is VALID")
+
+    except Exception:
+        print("\nSignature is INVALID")
+
+
+# -----------------------------
+# Vehicle Registration System
+# -----------------------------
+
+vehicles = {}
+
+
+def register_vehicle():
+
+    plate = input("Enter Number Plate: ")
+
+    if plate in vehicles:
+        print("Vehicle already registered!")
+        return
+
+    owner = input("Enter Owner Name: ")
+    model = input("Enter Vehicle Model: ")
+
+    vehicles[plate] = {
+        "owner": owner,
+        "model": model
+    }
+
+    print("\nVehicle Registered Successfully!")
+
+
+def retrieve_vehicle():
+
+    plate = input("Enter Number Plate: ")
+
+    if plate not in vehicles:
+        print("Vehicle Not Found!")
+        return
+
+    print("\nVehicle Details")
+    print("--------------------")
+    print("Number Plate:", plate)
+    print("Owner:", vehicles[plate]["owner"])
+    print("Model:", vehicles[plate]["model"])
+
+
+# -----------------------------
+# Main Menu
+# -----------------------------
+
+while True:
+
+    print("\n")
+    print("===================================")
+    print(" Cryptography & Blockchain System ")
+    print("===================================")
+
+    print("1. Generate SHA-256 Hash")
+    print("2. Generate RSA Key Pair")
+    print("3. Sign Message")
+    print("4. Verify Signature")
+    print("5. Register Vehicle")
+    print("6. Retrieve Vehicle")
+    print("7. Exit")
+
+    choice = input("\nEnter Choice: ")
+
+    if choice == "1":
+        generate_hash()
+
+    elif choice == "2":
+        generate_keys()
+
+    elif choice == "3":
+
+        result = sign_message()
+
+        if result:
+            msg, sig = result
+
+            print("\nMessage:")
+            print(msg)
+
+            print("\nSignature (HEX):")
+            print(sig.hex())
+
+    elif choice == "4":
+        verify_signature()
+
+    elif choice == "5":
+        register_vehicle()
+
+    elif choice == "6":
+        retrieve_vehicle()
+
+    elif choice == "7":
+        print("Thank You!")
+        break
+
+    else:
+        print("Invalid Choice!")
